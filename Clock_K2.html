@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clock_K2</title>
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg1: #f3f1ec; --bg2: #cdc8bd;
+  --shadow: rgba(40, 32, 20, .5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg1: #2c2d33; --bg2: #0b0b0e; --shadow: rgba(0, 0, 0, .85); }
+}
+:root[data-theme="dark"] { --bg1: #2c2d33; --bg2: #0b0b0e; --shadow: rgba(0, 0, 0, .85); }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+html, body { height: 100%; margin: 0; }
+body {
+  display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, var(--bg1), var(--bg2) 85%);
+}
+.scene {
+  --size: min(92vw, 92vh, 720px);
+  --size: min(92vw, 92dvh, 720px);
+  --u: calc(var(--size) / 100);
+  --gx: 35%; --gy: 25%; --ba: 0deg;
+  width: var(--size); height: var(--size); perspective: 1300px;
+}
+.clock { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform; }
+.clock > * { position: absolute; inset: 0; border-radius: 50%; }
+
+.wall {
+  inset: 4%; background: var(--shadow); filter: blur(calc(var(--u) * 4));
+  transform: translate3d(calc(var(--u) * 5), calc(var(--u) * 7), calc(var(--u) * -12));
+}
+/* brushed-metal case side, darker toward the back */
+.edge {
+  background:
+    linear-gradient(rgba(0,0,0,calc(var(--i) * .022)), rgba(0,0,0,calc(var(--i) * .022))),
+    conic-gradient(from 20deg, #3c3c41, #121214, #4d4d54, #0d0d0f, #3c3c41);
+  transform: translateZ(calc(var(--u) * var(--i) * -.4));
+}
+.bezel {
+  background: conic-gradient(from var(--ba), #4a4a50, #1b1b1e 12%, #6a6a72 25%, #121214 38%, #54545b 50%, #1b1b1e 62%, #6e6e76 75%, #141416 88%, #4a4a50);
+  transform: translateZ(calc(var(--u) * .5));
+  box-shadow: 0 0 0 1px rgba(0,0,0,.3);
+}
+.bezel-in {
+  inset: 3.2%;
+  background: conic-gradient(from calc(var(--ba) * -1 + 40deg), #2c2c30, #5a5a62 20%, #16161a 40%, #48484f 60%, #101012 80%, #2c2c30);
+  transform: translateZ(calc(var(--u) * .7));
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25);
+}
+.dial { inset: 6.5%; overflow: hidden; transform: translateZ(calc(var(--u) * .9)); }
+.dial svg { width: 100%; height: 100%; display: block; }
+.dial::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: inset calc(var(--u) * .8) calc(var(--u) * 1.2) calc(var(--u) * 2.4) rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.35);
+}
+.logo path { fill-opacity: .45; }
+.logo .eyes { fill-opacity: 1; }
+.eyes { transform-box: fill-box; transform-origin: center; filter: drop-shadow(0 0 2px #ff2a2a); }
+.dial #dig { filter: drop-shadow(0 0 1.5px rgba(255,214,10,.7)); }
+.hand { pointer-events: none; }
+.hand svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hh { transform: translateZ(calc(var(--u) * 2.4)); filter: drop-shadow(calc(var(--u) * .5) calc(var(--u) * .8) calc(var(--u) * .7) rgba(0,0,0,.35)); }
+.mm { transform: translateZ(calc(var(--u) * 3.2)); filter: drop-shadow(calc(var(--u) * .7) calc(var(--u) * 1.1) calc(var(--u) * .9) rgba(0,0,0,.33)); }
+.ss { transform: translateZ(calc(var(--u) * 4)); filter: drop-shadow(calc(var(--u) * .9) calc(var(--u) * 1.4) calc(var(--u) * 1.1) rgba(0,0,0,.3)); }
+.hub {
+  inset: auto; left: 47%; top: 47%; width: 6%; height: 6%;
+  background: radial-gradient(circle, #ffd60a 0 22%, transparent 24%), radial-gradient(circle at 35% 30%, #fff, #c9ced6 40%, #6d7480 100%);
+  transform: translateZ(calc(var(--u) * 4.6));
+  box-shadow: calc(var(--u) * .8) calc(var(--u) * 1.4) calc(var(--u) * 1.4) rgba(0,0,0,.35);
+}
+.glass {
+  inset: 5%; pointer-events: none; transform: translateZ(calc(var(--u) * 6));
+  background:
+    radial-gradient(ellipse 60% 45% at var(--gx) var(--gy), rgba(255,255,255,.42), rgba(255,255,255,0) 70%),
+    linear-gradient(155deg, rgba(255,255,255,.12), rgba(255,255,255,0) 35%, rgba(255,255,255,0) 70%, rgba(255,255,255,.08));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), inset 0 0 calc(var(--u) * 3) rgba(255,255,255,.18);
+}
+</style>
+</head>
+<body>
+<div class="scene" id="scene" role="img" aria-label="Analog clock showing the current time">
+  <div class="clock" id="clock">
+    <div class="wall"></div>
+    <div class="bezel"></div>
+    <div class="bezel-in"></div>
+    <div class="dial">
+      <svg viewBox="0 0 400 400" aria-hidden="true">
+        <defs>
+          <radialGradient id="dg" cx=".4" cy=".35" r=".8">
+            <stop offset="0" stop-color="#16305f"/><stop offset=".7" stop-color="#0d2046"/><stop offset="1" stop-color="#07122a"/>
+          </radialGradient>
+          <filter id="grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/>
+            <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .25 0 0 0 -.08"/>
+          </filter>
+          <radialGradient id="vg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".1"/><stop offset=".6" stop-color="#000" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
+          <clipPath id="lc"><circle cx="200" cy="200" r="117"/></clipPath>
+          <clipPath id="cp"><circle cx="200" cy="200" r="200"/></clipPath>
+        </defs>
+        <circle cx="200" cy="200" r="200" fill="url(#dg)"/>
+        <g class="logo" transform="translate(60.8 46.4) scale(1.6)"><path d="M140.571 54.1631C140.182 54.2574 139.797 54.3429 139.416 54.4406C139.029 54.5383 138.643 54.6378 138.263 54.7495C136.033 55.3376 133.879 56.1752 131.731 57.0355C132.137 56.8191 132.546 56.6115 132.957 56.4073C133.332 56.2223 133.708 56.0391 134.086 55.8663C134.37 55.7319 134.65 55.6028 134.94 55.4719C135.222 55.3428 135.506 55.2137 135.793 55.0967C136.18 54.931 136.566 54.7704 136.953 54.6099C137.624 54.3411 138.292 54.0863 138.966 53.849C139.325 53.7181 139.679 53.5977 140.036 53.4808C144.162 52.09 148.461 51.2174 152.798 50.9993C150.244 50.3781 147.649 50.1023 145.047 50.1023C142.603 50.1023 140.167 50.3397 137.765 50.7602C137.735 50.7672 137.704 50.7724 137.674 50.7777C137.273 50.8457 136.875 50.9208 136.481 50.9976C136.465 51.0045 136.444 51.0045 136.432 51.0115C136.046 51.0918 135.666 51.1721 135.286 51.2558C135.243 51.2698 135.199 51.275 135.156 51.289C134.764 51.3727 134.375 51.467 133.995 51.5647C133.922 51.5839 133.856 51.6014 133.788 51.6205C133.008 51.816 132.235 52.0306 131.473 52.2592C131.033 52.3884 130.601 52.5228 130.165 52.6659C130.024 52.7077 129.888 52.7531 129.753 52.8002C129.059 53.0288 128.371 53.2696 127.699 53.514C125.261 54.4005 122.939 55.4039 120.798 56.4317C120.441 56.5975 120.093 56.7668 119.746 56.9413C119.405 57.1071 119.06 57.2798 118.727 57.4526C111.539 61.1312 106.725 64.8098 106.676 64.8098C104.877 69.3244 101.902 70.4796 99.3154 70.4796C96.5895 70.4796 94.3078 69.1987 94.3078 69.1987C95.3738 63.2881 92.9144 60.0458 92.9144 60.0458C92.9144 60.0458 92.587 65.7103 87.0638 65.7103H86.8844C81.3578 65.7103 81.0339 60.0458 81.0339 60.0458C81.0339 60.0458 78.571 63.2881 79.6405 69.1987C79.6405 69.1987 77.3588 70.4796 74.6329 70.4796C73.3423 70.4796 71.9489 70.1899 70.653 69.3348C69.3624 68.485 68.1745 67.0627 67.2705 64.8081C67.2601 64.8081 66.8542 64.5044 66.1105 63.9827C65.9642 63.8849 65.8022 63.775 65.6263 63.6511C63.8392 62.4226 60.6901 60.3547 56.658 58.2082C56.4733 58.1035 56.2835 58.0058 56.0919 57.9081C55.8045 57.7545 55.5154 57.6062 55.221 57.4526C54.324 56.9971 53.387 56.5364 52.4151 56.0792C52.0162 55.8942 51.6104 55.711 51.1993 55.526C50.9676 55.4213 50.7343 55.3184 50.5009 55.2206C50.2797 55.1194 50.0585 55.0217 49.839 54.931C49.4454 54.7634 49.0447 54.5976 48.6459 54.4319C45.7685 53.2696 42.6873 52.2243 39.4982 51.4548C39.2212 51.3797 38.9443 51.3204 38.6691 51.2558C38.38 51.1878 38.0995 51.1284 37.8087 51.0708C37.1816 50.9435 36.5581 50.8196 35.9241 50.7149C33.6041 50.3222 31.2527 50.1006 28.9013 50.1006C26.2852 50.1006 23.6656 50.3763 21.093 51.0098C25.3534 51.2506 29.5632 52.1109 33.618 53.4703C34.3182 53.7042 35.0166 53.9555 35.7099 54.2225C35.9607 54.3132 36.2132 54.4127 36.464 54.5174C36.5755 54.561 36.6922 54.6029 36.8019 54.6517C37.1503 54.7913 37.5021 54.9344 37.8452 55.088C38.0978 55.1927 38.3504 55.3027 38.5959 55.4196C38.8903 55.5435 39.1847 55.6778 39.479 55.8192C39.8465 55.9867 40.2106 56.1647 40.5711 56.3445C41.0257 56.5643 41.4751 56.7999 41.921 57.032C39.7786 56.1717 37.6223 55.3341 35.3894 54.746C34.9731 54.6291 34.5481 54.5174 34.1248 54.4127C33.7748 54.3254 33.4247 54.2399 33.0728 54.1596C29.5545 53.3499 25.9543 52.9241 22.3558 52.9102C25.106 53.5576 28.5129 54.7128 31.1691 56.7476C31.237 56.7982 31.3067 56.8523 31.3676 56.9011C31.4948 57.0059 31.6185 57.1036 31.7421 57.2153C31.8222 57.2816 31.9076 57.3514 31.986 57.4299C32.1096 57.5364 32.2298 57.6515 32.3465 57.7685C32.465 57.8714 32.5747 57.9901 32.6792 58.107C32.7889 58.2117 32.883 58.3147 32.9683 58.4194C33.0676 58.5258 33.1582 58.6305 33.2453 58.7405C33.2818 58.7841 33.3132 58.8225 33.3428 58.8626C33.4369 58.9726 33.5222 59.0842 33.6006 59.2012C33.7608 59.4158 33.9124 59.6374 34.05 59.8713C34.1179 59.969 34.1701 60.0702 34.2346 60.1732C34.2816 60.2657 34.3373 60.3581 34.3809 60.4506C34.5655 60.7944 34.7223 61.1452 34.8599 61.5151C34.9086 61.6373 34.9522 61.7612 34.994 61.8903C35.001 61.9043 35.001 61.9113 35.001 61.92C35.0689 62.1119 35.1246 62.2952 35.1734 62.4941C35.2762 62.9007 35.3632 63.323 35.4137 63.7593C35.4677 64.1956 35.4974 64.6528 35.4974 65.1257C35.4974 67.1378 34.9783 69.4552 33.7626 72.1322L44.9586 69.5477L35.6454 73.4043C39.749 73.9593 48.0363 76.1371 51.9657 84.7089C54.6236 81.9657 59.2828 77.3151 61.878 74.7149C59.9029 77.3901 56.5761 81.8924 54.2979 85.0335C55.5938 84.5554 57.4331 84.0319 59.3507 84.0319C62.2734 84.0319 65.3929 85.236 67.0597 89.6109C68.8224 87.7227 71.1198 85.3232 72.5167 83.8486C71.6876 85.2185 69.803 88.3439 68.6796 90.2321C69.803 89.9494 70.9804 89.8028 72.191 89.8028C80.1107 89.8028 86.5274 93.9195 86.8217 101.779L86.9872 102.617L87.1718 101.779C87.4906 93.9387 93.9246 89.8028 101.832 89.8028C102.893 89.8028 103.924 89.9232 104.92 90.1414C103.792 88.2462 101.949 85.1958 101.136 83.8486C102.59 85.3791 105.021 87.9199 106.807 89.8395C108.458 85.2813 111.626 84.0388 114.603 84.0388C116.334 84.0388 117.99 84.4559 119.252 84.8922C116.984 81.7563 113.721 77.3465 111.774 74.7131C114.439 77.3831 119.281 82.21 121.899 84.9184C125.717 76.3238 133.881 74.0378 138.085 73.434L128.692 69.546L140.222 72.2037C138.97 69.4832 138.442 67.1343 138.449 65.0995C138.449 64.8657 138.453 64.6301 138.472 64.412C138.486 64.2008 138.501 63.9984 138.528 63.8029C138.554 63.5883 138.583 63.3789 138.627 63.1677C138.644 63.0403 138.676 62.9094 138.709 62.7873C138.724 62.6878 138.75 62.5901 138.777 62.4924C138.811 62.3545 138.85 62.2271 138.89 62.105C138.904 62.0421 138.923 61.9863 138.946 61.9252C138.975 61.8205 139.013 61.7176 139.057 61.6129C139.087 61.5064 139.13 61.4087 139.167 61.311C139.203 61.2132 139.247 61.112 139.294 61.0143C139.32 60.9462 139.357 60.8747 139.395 60.8066C139.456 60.6635 139.522 60.5222 139.602 60.3878C139.609 60.3669 139.621 60.3512 139.632 60.3267C139.719 60.1662 139.809 60.0056 139.909 59.8521C139.994 59.7055 140.093 59.5589 140.198 59.4158C140.21 59.3931 140.228 59.3669 140.252 59.3373C140.353 59.1942 140.45 59.0528 140.567 58.9185C140.672 58.7771 140.781 58.641 140.905 58.5049C140.928 58.4752 140.959 58.4438 140.989 58.4141C141.09 58.2902 141.199 58.1733 141.314 58.0564C141.445 57.915 141.577 57.7859 141.72 57.655C141.9 57.484 142.088 57.3165 142.279 57.1577C142.377 57.0634 142.483 56.9849 142.588 56.9064V56.8994C145.27 54.7791 148.767 53.5768 151.58 52.9136H151.364C147.741 52.9136 144.115 53.3325 140.574 54.1561L140.571 54.1631ZM83.3905 70.1934C83.2372 70.1934 83.1135 70.066 83.1135 69.909C83.1135 69.7519 83.2372 69.6315 83.3905 69.6315C83.5437 69.6315 83.6674 69.7554 83.6674 69.909C83.6674 70.0625 83.5437 70.1934 83.3905 70.1934ZM90.739 70.2597C90.5839 70.2597 90.4568 70.1323 90.4568 69.9753C90.4568 69.8182 90.5839 69.6995 90.739 69.6995C90.894 69.6995 91.0159 69.8234 91.0159 69.9753C91.0159 70.1271 90.8922 70.2597 90.739 70.2597Z" fill="white"/><path d="M90.6179 68.5253C89.8132 68.5253 89.1636 69.178 89.1636 69.9772C89.1636 70.7764 89.815 71.4343 90.6179 71.4343C91.4209 71.4343 92.0671 70.7817 92.0671 69.9772C92.0671 69.1727 91.4157 68.5253 90.6179 68.5253ZM83.2695 68.459C82.4648 68.459 81.8203 69.1116 81.8203 69.9109C81.8203 70.7101 82.4648 71.368 83.2695 71.368C84.0741 71.368 84.7186 70.7154 84.7186 69.9109C84.7186 69.1064 84.0672 68.459 83.2695 68.459ZM90.6179 68.5253C89.8132 68.5253 89.1636 69.178 89.1636 69.9772C89.1636 70.7764 89.815 71.4343 90.6179 71.4343C91.4209 71.4343 92.0671 70.7817 92.0671 69.9772C92.0671 69.1727 91.4157 68.5253 90.6179 68.5253Z" class="eyes" fill="#ED1C24"/><path d="M96.0225 53.7716L89.7382 54.5831L87.0507 59.841L84.3858 54.6302L77.8298 53.7838L80.8657 47.7005C81.862 48.0181 83.7448 48.6184 85.1348 49.0512L83.3739 38.4883L87.0507 24.3008L90.7258 38.4883L88.984 48.9291C90.3879 48.4928 92.1262 47.9448 93.004 47.6621L95.904 53.4732L95.9093 53.4872L96.0242 53.7681L96.0225 53.7716Z" fill="white"/><path d="M97.5054 28.8408V53.7884L97.0857 52.9491V52.9473L93.792 46.3544L93.7502 46.07L92.5449 37.6325L97.5054 28.8408Z" fill="white"/><path d="M81.3438 37.6325L80.1281 46.1118L80.095 46.3544L76.3833 53.7884V28.8408L81.3438 37.6325Z" fill="white"/><path d="M100.595 120.848L90.9217 130.116H82.354L72.6873 120.848H100.595Z" fill="white"/><path d="M79.8159 131.649H70.5637V150.374H79.8159V131.649Z" fill="white"/><path d="M49.6078 132.426V150.373H40.3521V123.568L49.6078 132.426Z" fill="white"/><path d="M79.7176 130.117H49.9283L40.2581 120.858V120.846H56.8831L56.8814 120.849H70.0317L79.7176 130.117Z" fill="white"/><path d="M79.8151 100.89V110.159H79.7977C79.7925 112.932 79.7803 115.295 79.7803 115.295H75.5583L70.0474 110.159H65.1687L58.341 119.25H40.3608V101.01H49.6131V114.065H50.6529L60.5356 100.914L60.5426 100.921V100.891H79.8169L79.8151 100.89Z" fill="white"/><path d="M133.561 141.128V150.405H114.289L95.3766 150.374H92.9973V131.942H102.962V141.128H123.793L129.304 135.993H133.528C133.528 135.993 133.54 138.357 133.547 141.128H133.559H133.561Z" fill="white"/><path d="M123.385 130.116H110.235L110.237 130.117H93.6133V130.105L103.284 120.846H133.466L123.385 130.116Z" fill="white"/><path d="M133.63 101.307V119.648H124.378V110.554H102.697L97.1858 115.69H92.9638C92.9638 115.69 92.9516 113.327 92.9464 110.554H92.929V101.284H112.203L133.632 101.309L133.63 101.307Z" fill="white"/><path d="M152.796 51.0012C151.471 50.6783 150.135 50.4515 148.792 50.3066C149.027 50.6277 149.269 50.961 149.509 51.2909C150.601 51.1548 151.697 51.057 152.794 51.0012H152.796Z" fill="white"/><path d="M150.694 52.9306C150.737 52.9917 150.779 53.051 150.821 53.1103C151.077 53.044 151.329 52.9795 151.577 52.9219H151.361C151.138 52.9219 150.917 52.9289 150.694 52.9323V52.9306Z" fill="white"/><path d="M22.3584 52.915C22.6336 52.9796 22.9158 53.0512 23.2014 53.1262C23.2467 53.0634 23.292 52.9988 23.3407 52.9325C23.0133 52.9238 22.6858 52.9168 22.3584 52.915Z" fill="white"/><path d="M25.2442 50.2959C23.8508 50.4425 22.4643 50.6763 21.0901 51.0149C22.2275 51.0794 23.3596 51.1894 24.4883 51.3395C24.7408 50.9904 24.9969 50.6379 25.2442 50.2959Z" fill="white"/><path d="M28.3086 52.0069C29.432 52.2512 30.5485 52.5374 31.6545 52.8602C32.3077 52.0243 32.9817 51.2042 33.6732 50.3962C32.3791 50.2426 31.078 50.1449 29.7769 50.1152C29.277 50.7382 28.7876 51.3699 28.3086 52.0086V52.0069Z" fill="white"/><path d="M142.284 52.7807C143.394 52.4631 144.515 52.1822 145.642 51.9431C145.179 51.3253 144.705 50.7163 144.223 50.1143C142.918 50.1422 141.615 50.2364 140.321 50.39C140.994 51.1753 141.65 51.971 142.284 52.7807Z" fill="white"/><path d="M30.9866 53.7331C29.8057 53.5149 28.6195 53.3369 27.4282 53.2061C27.1756 53.5568 26.9265 53.9093 26.6792 54.2636C27.6616 54.658 28.6387 55.1239 29.5688 55.6736C30.0303 55.0192 30.5041 54.3718 30.9866 53.7331Z" fill="white"/><path d="M146.546 53.1719C145.347 53.294 144.152 53.4598 142.966 53.6727C143.463 54.3271 143.949 54.9885 144.421 55.6604C145.353 55.1141 146.331 54.6482 147.312 54.2556C147.059 53.8926 146.803 53.5314 146.546 53.1719Z" fill="white"/><path d="M145.047 56.5688C147.648 60.3906 149.869 64.4636 151.684 68.7617C155.343 77.4312 157.2 86.6417 157.2 96.1385C157.2 105.635 155.345 114.846 151.684 123.513C148.148 131.888 143.086 139.411 136.638 145.871C135.99 146.521 135.328 147.152 134.66 147.772V151.506H130.302C125.423 155.347 120.074 158.507 114.323 160.945C105.67 164.612 96.4768 166.472 86.9981 166.472C77.5195 166.472 68.3265 164.614 59.6734 160.945C53.9065 158.501 48.5436 155.328 43.6545 151.475H39.2496V147.691C38.6104 147.096 37.9781 146.493 37.358 145.871C30.9101 139.411 25.8485 131.89 22.3127 123.513C18.6533 114.844 16.7966 105.633 16.7966 96.1385C16.7966 86.6435 18.6516 77.4312 22.3127 68.7617C24.1259 64.4688 26.3414 60.401 28.9366 56.5845C27.9996 56.0366 27.012 55.5811 26.0401 55.2007C18.197 66.9014 13.6196 80.9842 13.6196 96.1385C13.6196 136.741 46.4727 169.657 86.9981 169.657C127.524 169.657 160.377 136.741 160.377 96.1385C160.377 80.979 155.796 66.891 147.947 55.1885C146.798 55.6387 145.838 56.1116 145.047 56.5706V56.5688Z" fill="white"/><path d="M86.6602 25.807C86.7734 25.807 86.8848 25.8052 86.9981 25.8052C87.1461 25.8052 87.2924 25.807 87.4405 25.8087L87.0503 24.3027L86.6602 25.807Z" fill="white"/><path d="M75.1122 24.0028L76.5631 26.5733C79.4544 26.1423 82.384 25.8928 85.3433 25.8247L85.8205 23.9819L86.1723 22.626C63.8656 22.8738 43.9504 33.0912 30.6538 49.043C31.927 49.1005 33.2299 49.2192 34.5466 49.3972C35.4541 48.3763 36.3894 47.3764 37.3613 46.4044C43.8093 39.9441 51.3163 34.8729 59.6767 31.3304C64.6599 29.2189 69.8225 27.7076 75.1139 26.8054V24.0028H75.1122Z" fill="white"/><path d="M87.9285 22.6277L88.2786 23.9819L88.7558 25.8264C91.6454 25.8962 94.5053 26.1423 97.3322 26.5576L98.7727 24.0028V26.7862C104.104 27.6867 109.303 29.2032 114.321 31.3304C122.68 34.8729 130.189 39.9441 136.637 46.4044C137.605 47.3747 138.539 48.3711 139.444 49.3885C140.766 49.2122 142.069 49.0953 143.344 49.0412C130.069 33.1156 110.193 22.9034 87.9285 22.626V22.6277Z" fill="white"/></g>
+        <circle cx="200" cy="200" r="200" fill="url(#vg)"/>
+        <rect width="400" height="400" filter="url(#grain)" clip-path="url(#cp)"/>
+        <circle cx="200" cy="200" r="184" fill="none" stroke="rgba(0,0,0,.6)" stroke-width="22"/>
+        <g id="leds"></g>
+        <g id="nums" fill="#f5f5f5" stroke="#000" stroke-width="3" paint-order="stroke" font-size="40" font-weight="700" text-anchor="middle" dominant-baseline="central" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"></g>
+        <rect x="150" y="299" width="100" height="24" rx="5" fill="#050506" stroke="#2a2a2e"/>
+        <g id="dig"></g>
+      </svg>
+    </div>
+    <div class="hand hh"><svg viewBox="0 0 400 400"><path d="M200 98 L194 118 L193 222 L195 234 L200 234 Z" fill="#f4f4f4"/><path d="M200 98 L206 118 L207 222 L205 234 L200 234 Z" fill="#b9b9bd"/><path d="M200 98 L206 118 L207 222 L205 234 L195 234 L193 222 L194 118 Z" fill="none" stroke="rgba(0,0,0,.45)" stroke-width=".6"/></svg></div>
+    <div class="hand mm"><svg viewBox="0 0 400 400"><path d="M200 28 L196 48 L195 224 L196.5 234 L200 234 Z" fill="#f4f4f4"/><path d="M200 28 L204 48 L205 224 L203.5 234 L200 234 Z" fill="#b9b9bd"/><path d="M200 28 L204 48 L205 224 L203.5 234 L196.5 234 L195 224 L196 48 Z" fill="none" stroke="rgba(0,0,0,.45)" stroke-width=".6"/></svg></div>
+    <div class="hand ss"><svg viewBox="0 0 400 400"><rect x="199.3" y="34" width="1.4" height="190" fill="#ffd60a"/><rect x="198.2" y="214" width="3.6" height="32" fill="#e6bd00"/></svg></div>
+    <div class="hub"></div>
+    <div class="glass"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var scene = document.getElementById('scene'), clock = document.getElementById('clock');
+  var hh = document.querySelector('.hh'), mm = document.querySelector('.mm'), ss = document.querySelector('.ss');
+
+  // case thickness: many thin discs so no banding shows when tilted
+  var bezel = clock.querySelector('.bezel');
+  for (var i = 21; i >= 0; i--) {
+    var e = document.createElement('div');
+    e.className = 'edge'; e.style.setProperty('--i', i);
+    clock.insertBefore(e, bezel);
+  }
+
+  // numerals and the 60-LED seconds ring
+  var NS = 'http://www.w3.org/2000/svg', nums = document.getElementById('nums'), leds = document.getElementById('leds');
+  for (var n = 1; n <= 12; n++) {
+    var a = n * Math.PI / 6, tx = document.createElementNS(NS, 'text');
+    tx.setAttribute('x', (200 + 140 * Math.sin(a)).toFixed(1));
+    tx.setAttribute('y', (200 - 140 * Math.cos(a)).toFixed(1));
+    tx.textContent = n; nums.appendChild(tx);
+  }
+  var dots = [], halos = [];
+  for (var k = 0; k < 60; k++) {
+    var b = k * Math.PI / 30, big = k % 5 === 0;
+    var x = (200 + 184 * Math.sin(b)).toFixed(1), y = (200 - 184 * Math.cos(b)).toFixed(1);
+    var h = document.createElementNS(NS, 'circle'), c = document.createElementNS(NS, 'circle');
+    h.setAttribute('cx', x); h.setAttribute('cy', y); h.setAttribute('r', big ? 10 : 7.5); h.setAttribute('fill', '#1f7bff'); h.setAttribute('opacity', 0);
+    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', big ? 5.4 : 3.8);
+    leds.appendChild(h); leds.appendChild(c); halos.push(h); dots.push({ el: c, big: big });
+  }
+  var dig = document.getElementById('dig'), lastS = -1, lastL = -999;
+  function pad(v) { return (v < 10 ? '0' : '') + v; }
+  // seven-segment readout (drawn as vector segments)
+  var SEG = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
+  var ON = '#ffd60a', OFF = '#2d2706', digits = [], lastStr = '';
+  (function () {
+    var w = 9, hgt = 15, t = 2.2, g = .35, y0 = 303.5, hy = hgt / 2;
+    function hz(x0, yc) { return [[x0 + t / 2 + g, yc], [x0 + t + g, yc - t / 2], [x0 + w - t - g, yc - t / 2], [x0 + w - t / 2 - g, yc], [x0 + w - t - g, yc + t / 2], [x0 + t + g, yc + t / 2]]; }
+    function vt(xc, ya, yb) { return [[xc, ya], [xc + t / 2, ya + t / 2], [xc + t / 2, yb - t / 2], [xc, yb], [xc - t / 2, yb - t / 2], [xc - t / 2, ya + t / 2]]; }
+    function poly(pts) { var e = document.createElementNS(NS, 'polygon'); e.setAttribute('points', pts.map(function (q) { return q[0].toFixed(2) + ',' + q[1].toFixed(2); }).join(' ')); e.setAttribute('fill', OFF); dig.appendChild(e); return e; }
+    [158.5, 170.5, 188.5, 200.5, 219.5, 231.5].forEach(function (x0) {
+      var xl = x0 + t / 2, xr = x0 + w - t / 2, sm = { a: poly(hz(x0, y0 + t / 2)), g: poly(hz(x0, y0 + hy)), d: poly(hz(x0, y0 + hgt - t / 2)),
+        f: poly(vt(xl, y0 + t / 2 + g, y0 + hy - g)), b: poly(vt(xr, y0 + t / 2 + g, y0 + hy - g)),
+        e: poly(vt(xl, y0 + hy + g, y0 + hgt - t / 2 - g)), c: poly(vt(xr, y0 + hy + g, y0 + hgt - t / 2 - g)) };
+      digits.push(sm);
+    });
+    [182.2, 213.2].forEach(function (cxp) {
+      [y0 + hgt * .3, y0 + hgt * .7].forEach(function (cyp) {
+        var r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', cxp); r.setAttribute('y', cyp - 1); r.setAttribute('width', 2); r.setAttribute('height', 2); r.setAttribute('fill', ON);
+        dig.appendChild(r);
+      });
+    });
+  })();
+  function setDigits(str) {
+    if (str === lastStr) return; lastStr = str;
+    for (var q = 0; q < 6; q++) {
+      var on = SEG[str.charAt(q)];
+      for (var key in digits[q]) digits[q][key].setAttribute('fill', on.indexOf(key) >= 0 ? ON : OFF);
+    }
+  }
+  // LEDs light exactly when the second hand passes them
+  function paintLeds(L) {
+    for (var j = 0; j < 60; j++) {
+      var lit = j <= L;
+      dots[j].el.setAttribute('fill', lit ? '#2a8cff' : (dots[j].big ? '#7a8aa8' : '#12254d'));
+      halos[j].setAttribute('opacity', lit ? .32 : 0);
+    }
+  }
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var px = 0, py = 0, cx = 0, cy = 0;
+  if (!reduce) {
+    addEventListener('pointermove', function (ev) {
+      px = (ev.clientX / innerWidth - .5) * 2; py = (ev.clientY / innerHeight - .5) * 2;
+    });
+    document.documentElement.addEventListener('mouseleave', function () { px = 0; py = 0; });
+  }
+
+  // quartz-style tick: quick snap with a small overshoot, then settle
+  function tick(f) {
+    if (f >= .16) return 1;
+    var x = f / .16 - 1;
+    return 1 + 2.2 * x * x * x + 1.2 * x * x;
+  }
+
+  var eyes = document.querySelector('.eyes'), lastBlinkMark = -1;
+
+  var logo = document.querySelector('.logo');
+  var bat = Array.prototype.find.call(logo.querySelectorAll(':scope > path'), function (path) {
+    var box = path.getBBox();
+    return box.x > 18 && box.x < 25 && box.y > 48 && box.y < 52 &&
+      box.width > 125 && box.width < 140 && box.height > 45 && box.height < 60;
+  });
+  var wings = [];
+  if (bat) {
+    var defs = logo.ownerSVGElement.querySelector('defs');
+    var batLayer = document.createElementNS(NS, 'g');
+    batLayer.setAttribute('opacity', '.45');
+    logo.insertBefore(batLayer, bat);
+    [
+      { side: 'left', x: 0, width: 80, originX: 79, originY: 70 },
+      { side: 'right', x: 101, width: 79, originX: 101, originY: 70 }
+    ].forEach(function (wingInfo) {
+      var clip = document.createElementNS(NS, 'clipPath'), rect = document.createElementNS(NS, 'rect');
+      clip.id = 'bat-' + wingInfo.side + '-wing-clip';
+      clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+      rect.setAttribute('x', wingInfo.x); rect.setAttribute('y', 0);
+      rect.setAttribute('width', wingInfo.width); rect.setAttribute('height', 200);
+      clip.appendChild(rect); defs.appendChild(clip);
+
+      var wing = bat.cloneNode(true);
+      wing.setAttribute('clip-path', 'url(#' + clip.id + ')');
+      wing.style.fillOpacity = '1';
+      batLayer.appendChild(wing);
+      wings.push({
+        el: wing,
+        side: wingInfo.side,
+        originX: wingInfo.originX,
+        originY: wingInfo.originY,
+        flapStart: null
+      });
+    });
+    var bodyClip = document.createElementNS(NS, 'clipPath'), bodyRect = document.createElementNS(NS, 'rect');
+    bodyClip.id = 'bat-body-clip';
+    bodyClip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+    bodyRect.setAttribute('x', 78); bodyRect.setAttribute('y', 0);
+    bodyRect.setAttribute('width', 25); bodyRect.setAttribute('height', 200);
+    bodyClip.appendChild(bodyRect); defs.appendChild(bodyClip);
+    bat.setAttribute('clip-path', 'url(#bat-body-clip)');
+    bat.style.fillOpacity = '1';
+    batLayer.appendChild(bat);
+  }
+  var lastMinute = new Date().getMinutes();
+  function frame(now) {
+    var d = new Date(), S = d.getSeconds(), ms = d.getMilliseconds() / 1000;
+    var M = d.getMinutes(), H = d.getHours() % 12;
+    if (M !== lastMinute) {
+      lastMinute = M;
+      if (!reduce) {
+        wings.forEach(function (wing) {
+          wing.flapStart = now;
+        });
+      }
+    }
+    wings.forEach(function (wing) {
+      if (wing.flapStart === null) return;
+      var progress = (now - wing.flapStart) / 1800;
+      if (progress >= 1) {
+        wing.el.removeAttribute('transform');
+        wing.flapStart = null;
+        return;
+      }
+      var direction = wing.side === 'left' ? -1 : 1;
+      var eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
+      var angle = direction * Math.sin(eased * Math.PI * 2) * 6;
+      wing.el.setAttribute('transform', 'rotate(' + angle.toFixed(3) + ' ' + wing.originX + ' ' + wing.originY + ')');
+    });
+    var blinkMark = (d.getHours() * 60 + M) * 4 + Math.floor(S / 15);
+    if (eyes && S % 15 === 0 && blinkMark !== lastBlinkMark) {
+      lastBlinkMark = blinkMark;
+      eyes.animate([
+        { transform: 'scaleY(1)', opacity: 1 },
+        { transform: 'scaleY(.005)', opacity: 0, offset: .19 },
+        { transform: 'scaleY(.005)', opacity: 0, offset: .81 },
+        { transform: 'scaleY(1)', opacity: 1 }
+      ], { duration: 800, easing: 'ease-in-out' });
+    }
+    var tk = tick(ms);
+    var L = Math.floor(S - 1 + Math.min(tk, 1) + .5);
+    if (L !== lastL) { lastL = L; paintLeds(L); }
+    if (S !== lastS) { lastS = S; setDigits(pad(d.getHours()) + pad(M) + pad(S)); }
+    var mf = M + S / 60;
+    ss.style.rotate = ((S - 1 + tk) * 6) + 'deg';
+    mm.style.rotate = (mf * 6) + 'deg';
+    hh.style.rotate = ((H + mf / 60) * 30) + 'deg';
+
+    var s = now / 1000;
+    var ry = (reduce ? -14 : Math.sin(s * .31) * 16 - 6) - px * 18;
+    var rx = (reduce ? 12 : Math.sin(s * .23 + 1) * 7 + 10) + py * 14;
+    cx += (rx - cx) * .06; cy += (ry - cy) * .06;
+    clock.style.transform = 'rotateX(' + cx.toFixed(2) + 'deg) rotateY(' + cy.toFixed(2) + 'deg)';
+    scene.style.setProperty('--ba', (cy * 3 + cx * 1.5).toFixed(1) + 'deg');
+    scene.style.setProperty('--gx', Math.max(10, Math.min(90, 50 - cy * 1.6)).toFixed(1) + '%');
+    scene.style.setProperty('--gy', Math.max(5, Math.min(80, 30 + cx * 1.2)).toFixed(1) + '%');
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
